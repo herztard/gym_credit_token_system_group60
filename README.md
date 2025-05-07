@@ -18,7 +18,7 @@ a simple frontend interface for users.
 
 ## Team Members
 
-| Name                  | Student ID  | Lecture Group | Practice Group |
+| Name Surname          | Student ID  | Lecture Group | Practice Group |
 |-----------------------|-------------|---------------|----------------|
 | Adilzhan Slyamgazy    | 220103151   | 01-N          | 03-P           | 
 | Alikhan Toleberdyyev  | 220103050   | 01-N          | 03-P           | 
