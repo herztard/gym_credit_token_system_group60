@@ -23,4 +23,6 @@ a simple frontend interface for users.
 | Adilzhan Slyamgazy    | 220103151   | 01-N          | 03-P           | 
 | Alikhan Toleberdyyev  | 220103050   | 01-N          | 03-P           | 
 | Almat Zhuban          | 220103067   | 01-N          | 05-P           |
+| Ibrahim Serkebay      | 220103069   | 01-N          | 03-P           |
+
 
