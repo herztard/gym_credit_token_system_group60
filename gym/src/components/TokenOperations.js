@@ -1,14 +1,56 @@
 import React, { useState } from 'react';
 
-function TokenOperations({ userData, rates }) {
+function TokenOperations({ userData, rates, web3 }) {
   const [activeTab, setActiveTab] = useState('buy');
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real implementation, this would interact with the smart contract
-    console.log(`Operation: ${activeTab}, Amount: ${amount}, Recipient: ${recipient}`);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      if (!web3) {
+        throw new Error('Web3 is not initialized');
+      }
+
+      const accounts = await web3.eth.getAccounts();
+      const sender = accounts[0];
+
+      switch (activeTab) {
+        case 'buy':
+          // In a real implementation, this would call the smart contract's buy function
+          console.log(`Buying ${amount} GC for ${amount * rates.buyRate} ETH`);
+          break;
+
+        case 'sell':
+          // In a real implementation, this would call the smart contract's sell function
+          console.log(`Selling ${amount} GC for ${amount * rates.sellRate} ETH`);
+          break;
+
+        case 'transfer':
+          if (!web3.utils.isAddress(recipient)) {
+            throw new Error('Invalid recipient address');
+          }
+          // In a real implementation, this would call the smart contract's transfer function
+          console.log(`Transferring ${amount} GC to ${recipient}`);
+          break;
+
+        default:
+          throw new Error('Invalid operation');
+      }
+
+      // Clear form after successful transaction
+      setAmount('');
+      setRecipient('');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -18,22 +60,31 @@ function TokenOperations({ userData, rates }) {
           <button
             onClick={() => setActiveTab('buy')}
             className={`btn ${activeTab === 'buy' ? 'btn-primary' : 'btn-outline-primary'}`}
+            disabled={isLoading}
           >
             Buy GC
           </button>
           <button
             onClick={() => setActiveTab('sell')}
             className={`btn ${activeTab === 'sell' ? 'btn-primary' : 'btn-outline-primary'}`}
+            disabled={isLoading}
           >
             Sell GC
           </button>
           <button
             onClick={() => setActiveTab('transfer')}
             className={`btn ${activeTab === 'transfer' ? 'btn-primary' : 'btn-outline-primary'}`}
+            disabled={isLoading}
           >
             Transfer GC
           </button>
         </div>
+
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
           {activeTab === 'transfer' && (
@@ -46,6 +97,7 @@ function TokenOperations({ userData, rates }) {
                 className="form-control"
                 placeholder="0x..."
                 required
+                disabled={isLoading}
               />
             </div>
           )}
@@ -61,6 +113,9 @@ function TokenOperations({ userData, rates }) {
               className="form-control"
               placeholder="Enter amount"
               required
+              disabled={isLoading}
+              min="0"
+              step="0.01"
             />
           </div>
 
@@ -78,12 +133,20 @@ function TokenOperations({ userData, rates }) {
           <button
             type="submit"
             className="btn btn-primary w-100"
+            disabled={isLoading}
           >
-            {activeTab === 'buy'
-              ? 'Buy GC'
-              : activeTab === 'sell'
-              ? 'Sell GC'
-              : 'Transfer GC'}
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Processing...
+              </>
+            ) : (
+              activeTab === 'buy'
+                ? 'Buy GC'
+                : activeTab === 'sell'
+                ? 'Sell GC'
+                : 'Transfer GC'
+            )}
           </button>
         </form>
       </div>
