@@ -13,17 +13,21 @@ function UserProfile({ userData }) {
         setLoading(true);
         setError('');
 
+        // Check if we have a valid address
         if (!userData.address || userData.address === '0x...') {
           setLoading(false);
           return;
         }
 
+        // Get the actual address (not the formatted one)
         const actualAddress = userData.address.includes('...') 
           ? window.ethereum.selectedAddress 
           : userData.address;
 
+        // Fetch user profile from the blockchain
         const userProfile = await getUserProfile(actualAddress);
         
+        // Fetch GC balance
         const balance = await getGymCoinBalance(actualAddress);
         
         setProfile(userProfile);
