@@ -47,20 +47,15 @@ function TokenOperations({ userData }) {
     setSuccess('');
     
     try {
-      if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+      if (!amount || isNaN(amount)) {
         throw new Error('Please enter a valid amount');
       }
       
-      if (parseFloat(amount) > 1000000) {
-        throw new Error('Amount is too large. Please enter a smaller amount.');
-      }
-      
-      const amountInWei = ethers.parseUnits(amount, 18);
-      console.log(`Converting ${amount} GC to ${amountInWei.toString()} wei`);
+      console.log(`Processing ${amount} GC tokens`);
       
       switch (activeTab) {
         case 'buy': {
-          const tx = await buyGymCoins(amountInWei);
+          const tx = await buyGymCoins(amount);
           setSuccess(`Successfully bought ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -70,7 +65,7 @@ function TokenOperations({ userData }) {
             throw new Error('Insufficient GC balance');
           }
           
-          const tx = await sellGymCoins(amountInWei);
+          const tx = await sellGymCoins(amount);
           setSuccess(`Successfully sold ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -84,7 +79,7 @@ function TokenOperations({ userData }) {
             throw new Error('Insufficient GC balance');
           }
           
-          const tx = await transferGymCoins(recipient, amountInWei);
+          const tx = await transferGymCoins(recipient, amount);
           setSuccess(`Successfully transferred ${amount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -179,8 +174,6 @@ function TokenOperations({ userData }) {
               placeholder="Enter amount"
               required
               disabled={isLoading}
-              min="0"
-              step="0.01"
             />
           </div>
 
@@ -198,7 +191,7 @@ function TokenOperations({ userData }) {
             <div className="text-muted small">
               <div>You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / 1e18).toFixed(8) : '0'} ETH</div>
               <div className="mt-1">Current Sell Rate: 1 GC = {parseFloat(rates.sellRate) / 1e18} ETH</div>
-              <div className="mt-1">Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</div>
+              <div className="mt-1">Your GC Balance: {parseFloat(gcBalance)} GC</div>
               <div className="mt-1">
                 <small>You will sell exactly {amount || '0'} GC tokens.</small>
               </div>
@@ -207,7 +200,7 @@ function TokenOperations({ userData }) {
           
           {activeTab === 'transfer' && (
             <div className="text-muted small">
-              <div>Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</div>
+              <div>Your GC Balance: {parseFloat(gcBalance)} GC</div>
               <div className="mt-1">
                 <small>You will transfer exactly {amount || '0'} GC tokens to {recipient || 'recipient'}.</small>
               </div>

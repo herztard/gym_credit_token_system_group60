@@ -7,25 +7,30 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract GymCoin is ERC20, Ownable {
     uint256 public sellRate;  
     uint256 public buyRate;  
+    uint256 public rateDivisor;
 
-    constructor(uint256 initialSupply, uint256 initialSellRate, uint256 initialBuyRate) 
+    constructor(uint256 initialSupply, uint256 initialSellRate, uint256 initialBuyRate, uint256 initialRateDivisor) 
         ERC20("Gym Coin", "GC") 
         Ownable(msg.sender)
     {
         _mint(msg.sender, initialSupply * (10 ** decimals()));
         sellRate = initialSellRate;
         buyRate = initialBuyRate;
+        rateDivisor = initialRateDivisor;
     }
 
     function buy(uint256 gcAmount) external payable {
-        require(msg.value == gcAmount * sellRate, "Incorrect ETH amount sent");
+        // Calculate ETH required: (gcAmount * sellRate) / rateDivisor
+        uint256 ethRequired = (gcAmount * sellRate) / rateDivisor;
+        require(msg.value == ethRequired, "Incorrect ETH amount sent");
         require(balanceOf(owner()) >= gcAmount, "Owner does not have enough GC");
         _transfer(owner(), msg.sender, gcAmount);
     }
 
     function sell(uint256 gcAmount) external {
         require(balanceOf(msg.sender) >= gcAmount, "Insufficient GC balance");
-        uint256 ethAmount = gcAmount * buyRate;
+        // Calculate ETH to return: (gcAmount * buyRate) / rateDivisor
+        uint256 ethAmount = (gcAmount * buyRate) / rateDivisor;
         require(address(this).balance >= ethAmount, "Contract has insufficient ETH");
         _transfer(msg.sender, owner(), gcAmount);
         payable(msg.sender).transfer(ethAmount);
@@ -35,11 +40,14 @@ contract GymCoin is ERC20, Ownable {
         sellRate = newSellRate;
         buyRate = newBuyRate;
     }
+    
+    function setRateDivisor(uint256 newRateDivisor) external onlyOwner {
+        rateDivisor = newRateDivisor;
+    }
 
     function withdrawEther(uint256 amount) external onlyOwner {
-        uint256 normalizedAmount = amount * (10 ** decimals());
-        require(address(this).balance >= normalizedAmount, "Insufficient ETH in contract");
-        payable(msg.sender).transfer(normalizedAmount);
+        require(address(this).balance >= amount, "Insufficient ETH in contract");
+        payable(msg.sender).transfer(amount);
     }
 
     receive() external payable {}
