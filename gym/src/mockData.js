@@ -3,13 +3,13 @@ export const mockUserData = {
   username: "JohnDoe",
   email: "john@example.com",
   address: "0x1234...5678",
-  balance: 1000, // GC tokens
-  ethBalance: 2.5, // ETH
+  balance: 1000, 
+  ethBalance: 2.5, 
 };
 
 export const mockRates = {
-  buyRate: 0.001, // ETH per GC
-  sellRate: 0.0009, // ETH per GC
+  buyRate: 0.001, 
+  sellRate: 0.0009,
 };
 
 export const mockTransactions = [
