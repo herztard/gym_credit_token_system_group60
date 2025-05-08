@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GymCoin is ERC20, Ownable {
+    uint256 public blockReward;
     uint256 public sellRate;  
     uint256 public buyRate;  
 
