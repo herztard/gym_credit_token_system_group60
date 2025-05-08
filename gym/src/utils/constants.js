@@ -1,1 +1,1 @@
-export const CONTRACT_ADDRESS = "your-smart-contract-deployed-address";
+// This file is no longer needed as constants are defined in /src/contracts/index.js
