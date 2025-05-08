@@ -18,18 +18,22 @@ function TokenOperations({ userData }) {
   const [rates, setRates] = useState({ buyRate: '50', sellRate: '50' });
   const [gcBalance, setGcBalance] = useState('0');
 
+  // Fetch exchange rates and GC balance when component mounts or address changes
   useEffect(() => {
     const fetchRatesAndBalance = async () => {
       try {
         if (!userData.address || userData.address === '0x...') return;
         
+        // Get actual address
         const actualAddress = userData.address.includes('...') 
           ? window.ethereum.selectedAddress 
           : userData.address;
           
+        // Fetch exchange rates
         const currentRates = await getExchangeRates();
         setRates(currentRates);
         
+        // Fetch GC balance
         const balance = await getGymCoinBalance(actualAddress);
         setGcBalance(balance);
       } catch (error) {
@@ -51,20 +55,31 @@ function TokenOperations({ userData }) {
         throw new Error('Please enter a valid amount');
       }
       
+      // Make sure the amount is reasonable (not too large)
+      if (parseFloat(amount) > 1000000) {
+        throw new Error('Amount is too large. Please enter a smaller amount.');
+      }
+      
+      // Convert amount to Wei (with proper amount of decimals)
+      // For example, if you're buying 1 GC, this would be 1 * 10^18 = 1000000000000000000 wei
       const amountInWei = ethers.parseUnits(amount, 18);
+      console.log(`Converting ${amount} GC to ${amountInWei.toString()} wei`);
       
       switch (activeTab) {
         case 'buy': {
+          // Buy GymCoins
           const tx = await buyGymCoins(amountInWei);
           setSuccess(`Successfully bought ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
         
         case 'sell': {
+          // Check if user has enough GC
           if (parseFloat(gcBalance) < parseFloat(amount)) {
             throw new Error('Insufficient GC balance');
           }
           
+          // Sell GymCoins
           const tx = await sellGymCoins(amountInWei);
           setSuccess(`Successfully sold ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
@@ -75,10 +90,12 @@ function TokenOperations({ userData }) {
             throw new Error('Invalid recipient address');
           }
           
+          // Check if user has enough GC
           if (parseFloat(gcBalance) < parseFloat(amount)) {
             throw new Error('Insufficient GC balance');
           }
           
+          // Transfer GymCoins
           const tx = await transferGymCoins(recipient, amountInWei);
           setSuccess(`Successfully transferred ${amount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
           break;
@@ -88,12 +105,14 @@ function TokenOperations({ userData }) {
           throw new Error('Invalid operation');
       }
       
+      // Refresh GC balance after transaction
       const actualAddress = userData.address.includes('...') 
         ? window.ethereum.selectedAddress 
         : userData.address;
       const updatedBalance = await getGymCoinBalance(actualAddress);
       setGcBalance(updatedBalance);
       
+      // Clear form
       setAmount('');
       setRecipient('');
       
@@ -181,16 +200,22 @@ function TokenOperations({ userData }) {
 
           {activeTab === 'buy' && (
             <div className="text-muted small">
-              Cost: {amount ? (parseFloat(amount) * parseFloat(rates.buyRate) / 1e18).toFixed(8) : '0'} ETH
-              <div className="mt-1">Current Buy Rate: 1 GC = {rates.buyRate} Wei</div>
+              <div>Cost: {amount ? (parseFloat(amount) * parseFloat(rates.buyRate) / 1e18).toFixed(8) : '0'} ETH</div>
+              <div className="mt-1">Current Buy Rate: 1 GC = {parseFloat(rates.buyRate) / 1e18} ETH</div>
+              <div className="mt-1">
+                <small>Note: Small transactions may be adjusted to minimum amount due to network limitations.</small>
+              </div>
             </div>
           )}
           
           {activeTab === 'sell' && (
             <div className="text-muted small">
-              You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / 1e18).toFixed(8) : '0'} ETH
-              <div className="mt-1">Current Sell Rate: 1 GC = {rates.sellRate} Wei</div>
+              <div>You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / 1e18).toFixed(8) : '0'} ETH</div>
+              <div className="mt-1">Current Sell Rate: 1 GC = {parseFloat(rates.sellRate) / 1e18} ETH</div>
               <div className="mt-1">Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</div>
+              <div className="mt-1">
+                <small>Note: Small transactions may be adjusted to minimum amount due to network limitations.</small>
+              </div>
             </div>
           )}
           

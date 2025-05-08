@@ -19,13 +19,16 @@ function UserRegistration({ userAddress, onSuccess }) {
         throw new Error('Username and email are required');
       }
       
+      // Register user
       const tx = await registerUser(username, email);
       setSuccess(`Registration successful! Transaction hash: ${tx.hash}`);
       
+      // Notify parent component
       if (onSuccess) {
         onSuccess();
       }
       
+      // Reset form
       setUsername('');
       setEmail('');
     } catch (error) {

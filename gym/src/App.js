@@ -15,6 +15,7 @@ function App() {
   const [isUserRegistered, setIsUserRegistered] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if wallet is already connected on page load
   useEffect(() => {
     const checkConnection = async () => {
       try {
@@ -31,6 +32,7 @@ function App() {
         setWeb3(web3Instance);
         setIsConnected(true);
         
+        // Check if user is registered
         try {
           const profile = await getUserProfile(address);
           setIsUserRegistered(!!profile.username);
@@ -48,6 +50,7 @@ function App() {
     checkConnection();
   }, []);
 
+  // Set up listener for account changes
   useEffect(() => {
     if (window.ethereum) {
       const cleanup = listenForAccountChanges(async ({ connected, address }) => {
