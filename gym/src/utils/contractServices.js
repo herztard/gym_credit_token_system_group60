@@ -6,6 +6,7 @@ import {
   USER_PROFILE_ABI 
 } from '../contracts';
 
+
 let provider;
 let signer;
 let gymCoinContract;
