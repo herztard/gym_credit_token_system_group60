@@ -3,7 +3,7 @@ const hre = require("hardhat");
 async function main() {
   // Deploy GymCoin contract
   const GymCoin = await hre.ethers.getContractFactory("GymCoin");
-  const gymCoin = await GymCoin.deploy(100000000, 50, 50);
+  const gymCoin = await GymCoin.deploy(100000000, 0.000001, 0.000001);
   await gymCoin.waitForDeployment();
   
   const UserProfile = await hre.ethers.getContractFactory("UserProfile");

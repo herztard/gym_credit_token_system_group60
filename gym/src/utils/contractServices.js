@@ -112,22 +112,18 @@ export const buyGymCoins = async (amount) => {
     const sellRate = await gymCoinContract.sellRate();
     console.log("Buy operation - Token amount (in wei):", amount.toString(), "Sell rate (wei per token):", sellRate.toString());
     
-    // Convert amount to a proper BigInt 
-    const amountBN = ethers.getBigInt(amount.toString());
-    const sellRateBN = ethers.getBigInt(sellRate.toString());
+    // Since we're passing a large wei amount but contract expects a token amount, 
+    // we need to adjust by dividing by 10^18 for the contract call
+    const amountBigInt = ethers.toBigInt(amount.toString());
+    const sellRateBigInt = ethers.toBigInt(sellRate.toString());
+    const amountInTokens = amountBigInt; 
+    const tokenAmount = amountInTokens > ethers.toBigInt("0") ? amountInTokens : ethers.toBigInt("1"); // ensure minimum of 1
     
-    // The contract's sell rate is in wei per token (not wei) 
-    // This means for a large token amount, the ETH value would be way too high
-    // Let's normalize the token amount to a more reasonable base unit (convert from wei to token)
-    const amountInTokens = amountBN / (10n ** 18n);
+    // But for the ETH value, we use the normal calculations from the contract
+    // (token amount * sell rate)
+    const ethAmount = tokenAmount * sellRateBigInt;
     
-    // If amountInTokens is 0 because of integer division with small amounts, use a minimum of 1
-    const normalizedAmount = amountInTokens > 0n ? amountInTokens : 1n;
-    
-    // Calculate ETH amount needed (normalizedAmount * sellRate)
-    const ethAmount = normalizedAmount * sellRateBN;
-    
-    console.log("Amount in tokens (normalized):", normalizedAmount.toString());
+    console.log("Token amount for contract:", tokenAmount.toString());
     console.log("ETH amount to send (wei):", ethAmount.toString());
     console.log("ETH amount to send (ETH):", ethers.formatEther(ethAmount));
     
@@ -137,18 +133,17 @@ export const buyGymCoins = async (amount) => {
     console.log("Sender ETH balance (wei):", senderBalance.toString());
     console.log("Sender ETH balance (ETH):", ethers.formatEther(senderBalance));
     
-    if (ethAmount > senderBalance) {
+    if (ethAmount > ethers.toBigInt(senderBalance.toString())) {
       throw new Error(`Insufficient funds. You need ${ethers.formatEther(ethAmount)} ETH but only have ${ethers.formatEther(senderBalance)} ETH.`);
     }
 
     // Execute the transaction
     console.log("Executing buy transaction...");
-    const tx = await gymCoinContract.buy(normalizedAmount, {
+    const tx = await gymCoinContract.buy(tokenAmount, {
       value: ethAmount
     });
     
     console.log("Transaction submitted:", tx.hash);
-    // Wait for the transaction to be mined
     console.log("Waiting for transaction confirmation...");
     await tx.wait();
     console.log("Transaction confirmed");
@@ -165,17 +160,15 @@ export const sellGymCoins = async (amount) => {
   try {
     if (!gymCoinContract) await initializeContracts();
     
-    // Convert from wei to tokens
-    const amountBN = ethers.getBigInt(amount.toString());
-    const amountInTokens = amountBN / (10n ** 18n);
-    const normalizedAmount = amountInTokens > 0n ? amountInTokens : 1n;
+    // Convert the wei amount to tokens for the contract call
+    const amountBigInt = ethers.toBigInt(amount.toString());
+    const amountInTokens = amountBigInt;
+    const tokenAmount = amountInTokens > ethers.toBigInt("0") ? amountInTokens : ethers.toBigInt("1"); // ensure minimum of 1
     
-    console.log("Executing sell transaction for normalized amount:", normalizedAmount.toString());
-    // Execute the transaction
-    const tx = await gymCoinContract.sell(normalizedAmount);
+    console.log("Executing sell transaction - Token amount:", tokenAmount.toString());
+    const tx = await gymCoinContract.sell(tokenAmount);
     
     console.log("Transaction submitted:", tx.hash);
-    // Wait for the transaction to be mined
     console.log("Waiting for transaction confirmation...");
     await tx.wait();
     console.log("Transaction confirmed");
@@ -187,22 +180,22 @@ export const sellGymCoins = async (amount) => {
   }
 };
 
-// Transfer tokens
 export const transferGymCoins = async (toAddress, amount) => {
   try {
     if (!gymCoinContract) await initializeContracts();
     
-    // Convert from wei to tokens
-    const amountBN = ethers.getBigInt(amount.toString());
-    const amountInTokens = amountBN / (10n ** 18n);
-    const normalizedAmount = amountInTokens > 0n ? amountInTokens : 1n;
-    
-    console.log("Executing transfer transaction - To:", toAddress, "Normalized amount:", normalizedAmount.toString());
-    // Execute the transaction
-    const tx = await gymCoinContract.transfer(toAddress, normalizedAmount);
+    const amountBigInt = ethers.toBigInt(amount.toString());
+    const amountInTokens = amountBigInt;
+    const tokenAmount = amountInTokens > ethers.toBigInt("0") ? amountInTokens : ethers.toBigInt("1"); 
+    console.log("Token amount for contract:", tokenAmount.toString());
+    console.log("amountBigInt:", amountBigInt.toString());
+    console.log("amountInTokens:", amountInTokens.toString());
+
+    console.log("Executing transfer transaction - To:", toAddress, "Amount in Tokens:", tokenAmount.toString());
+
+    const tx = await gymCoinContract.transfer(toAddress, tokenAmount);
     
     console.log("Transaction submitted:", tx.hash);
-    // Wait for the transaction to be mined
     console.log("Waiting for transaction confirmation...");
     await tx.wait();
     console.log("Transaction confirmed");
@@ -214,9 +207,7 @@ export const transferGymCoins = async (toAddress, amount) => {
   }
 };
 
-// UserProfile Contract Functions
 
-// Register user
 export const registerUser = async (username, email) => {
   try {
     if (!userProfileContract) await initializeContracts();
@@ -236,7 +227,6 @@ export const registerUser = async (username, email) => {
   }
 };
 
-// Get user profile
 export const getUserProfile = async (address) => {
   try {
     if (!userProfileContract) await initializeContracts();
