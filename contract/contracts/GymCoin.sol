@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GymCoin is ERC20, Ownable {
-    uint256 public blockReward;
     uint256 public sellRate;  
     uint256 public buyRate;  
 
@@ -38,8 +37,9 @@ contract GymCoin is ERC20, Ownable {
     }
 
     function withdrawEther(uint256 amount) external onlyOwner {
-        require(address(this).balance >= amount, "Insufficient ETH in contract");
-        payable(msg.sender).transfer(amount);
+        uint256 normalizedAmount = amount * (10 ** decimals());
+        require(address(this).balance >= normalizedAmount, "Insufficient ETH in contract");
+        payable(msg.sender).transfer(normalizedAmount);
     }
 
     receive() external payable {}
