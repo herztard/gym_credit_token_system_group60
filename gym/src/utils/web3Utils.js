@@ -36,16 +36,25 @@ export const connectWallet = async () => {
       const networkId = await web3.eth.net.getId();
       console.log("Current network ID:", networkId, "Expected:", CHAIN_ID);
       
-      // Convert both to strings before comparison to handle BigInt values
       if (networkId.toString() !== CHAIN_ID.toString()) {
-        throw new Error(`Please connect to ${NETWORK_NAME}`);
+        console.error(`Wrong network. Connected to ${networkId}, need ${CHAIN_ID}`);
+        
+        try {
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: `0x${parseInt(CHAIN_ID).toString(16)}` }],
+          });
+          console.log("Successfully switched network");
+        } catch (switchError) {
+          console.error("Failed to switch network:", switchError);
+          throw new Error(`Please connect to ${NETWORK_NAME} (ID: ${CHAIN_ID})`);
+        }
       }
     } catch (networkError) {
       console.error("Network check error:", networkError);
       throw new Error('Network error: ' + networkError.message);
     }
 
-    // Initialize contract instances
     try {
       console.log("Initializing contracts...");
       await initializeContracts();

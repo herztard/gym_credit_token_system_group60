@@ -1,14 +1,12 @@
-import GymCoinABI from './GymCoin.json';
-import UserProfileABI from './UserProfile.json';
+import GymCoinArtifact from './GymCoin.json';
+import UserProfileArtifact from './UserProfile.json';
 
-// Contract addresses on Sepolia testnet
-export const GYM_COIN_ADDRESS = '0x99b18d859995DD60f04F04409122846C2a87E68a';
-export const USER_PROFILE_ADDRESS = '0xAaD9E59E47012aAe2ee3e86231eB1cbF600A63af';
+export const GYM_COIN_ADDRESS = '0xe7219E4a860936a93F076d01FFb5D1541C750585';
+export const USER_PROFILE_ADDRESS = '0xc8846ba37665211B17686EFecDA92e66058ef90B';
 
-// Contract ABIs
-export const GYM_COIN_ABI = GymCoinABI;
-export const USER_PROFILE_ABI = UserProfileABI;
+// Extract the ABI from the artifact
+export const GYM_COIN_ABI = GymCoinArtifact.abi;
+export const USER_PROFILE_ABI = UserProfileArtifact.abi;
 
-// Network configuration
 export const CHAIN_ID = 11155111;
-export const NETWORK_NAME = 'Sepolia Testnet'; 
+export const NETWORK_NAME = 'Sepolia Testnet';

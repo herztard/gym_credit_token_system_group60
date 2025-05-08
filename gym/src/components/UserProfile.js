@@ -13,21 +13,17 @@ function UserProfile({ userData }) {
         setLoading(true);
         setError('');
 
-        // Check if we have a valid address
         if (!userData.address || userData.address === '0x...') {
           setLoading(false);
           return;
         }
 
-        // Get the actual address (not the formatted one)
         const actualAddress = userData.address.includes('...') 
           ? window.ethereum.selectedAddress 
           : userData.address;
 
-        // Fetch user profile from the blockchain
         const userProfile = await getUserProfile(actualAddress);
         
-        // Fetch GC balance
         const balance = await getGymCoinBalance(actualAddress);
         
         setProfile(userProfile);
@@ -77,12 +73,12 @@ function UserProfile({ userData }) {
             
             <div className="d-flex justify-content-between">
               <span className="text-muted">ETH Balance:</span>
-              <span>{parseFloat(userData.ethBalance).toFixed(4)} ETH</span>
+              <span>{parseFloat(userData.ethBalance)} ETH</span>
             </div>
             
             <div className="d-flex justify-content-between">
               <span className="text-muted">GC Balance:</span>
-              <span>{parseFloat(gcBalance).toFixed(2)} GC</span>
+              <span>{parseFloat(gcBalance)} GC</span>
             </div>
           </div>
         )}
