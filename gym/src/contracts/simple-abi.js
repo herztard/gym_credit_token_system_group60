@@ -1,8 +1,4 @@
-// Simplified ABI exports
-
-// Minimal GymCoin ABI with just the functions we need
 export const GYM_COIN_ABI = [
-  // Read functions
   {
     "inputs": [],
     "name": "name",

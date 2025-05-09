@@ -12,7 +12,6 @@ let signer;
 let gymCoinContract;
 let userProfileContract;
 
-// Initialize the provider, signer, and contracts
 export const initializeContracts = async () => {
   try {
     console.log("===== INITIALIZING CONTRACTS =====");
@@ -22,22 +21,18 @@ export const initializeContracts = async () => {
       throw new Error('Please install MetaMask!');
     }
     
-    // Check if we already have initialized contracts
     if (provider && signer && gymCoinContract && userProfileContract) {
       console.log("Contracts already initialized, checking connection...");
       
       try {
-        // Quick check to make sure we're still connected
         const address = await signer.getAddress();
         console.log("Current signer address:", address);
         return { provider, signer, gymCoinContract, userProfileContract };
       } catch (connectionError) {
         console.log("Connection check failed, reinitializing contracts:", connectionError);
-        // Fall through to reinitialize
       }
     }
     
-    // Debug ABI
     console.log("Checking ABIs...");
     if (!GYM_COIN_ABI || !Array.isArray(GYM_COIN_ABI)) {
       console.error("Invalid GymCoin ABI:", GYM_COIN_ABI);
@@ -90,13 +85,11 @@ export const initializeContracts = async () => {
       );
       console.log("GymCoin contract created");
       
-      // Test if we can access the contract functions
       try {
         const name = await gymCoinContract.name();
         const symbol = await gymCoinContract.symbol();
         console.log(`Contract verified: ${name} (${symbol})`);
         
-        // Try to get the owner's balance
         const signerAddress = await signer.getAddress();
         const balance = await gymCoinContract.balanceOf(signerAddress);
         console.log(`Current user balance: ${ethers.formatUnits(balance, 18)} ${symbol}`);
@@ -132,21 +125,17 @@ export const initializeContracts = async () => {
   }
 };
 
-// Set up balance update listeners
 export const setupBalanceListeners = async (address, onBalanceUpdate) => {
   try {
     if (!gymCoinContract) await initializeContracts();
 
-    // Instead of using contract events which aren't properly defined in the ABI,
-    // set up a polling mechanism to check balance periodically
+
     let lastBalance = await getGymCoinBalance(address);
     
-    // Start polling for balance changes
     const intervalId = setInterval(async () => {
       try {
         const currentBalance = await getGymCoinBalance(address);
         
-        // If balance changed, trigger the callback
         if (currentBalance !== lastBalance) {
           console.log("Balance changed:", lastBalance, "->", currentBalance);
           lastBalance = currentBalance;
@@ -155,9 +144,8 @@ export const setupBalanceListeners = async (address, onBalanceUpdate) => {
       } catch (error) {
         console.error("Error polling balance:", error);
       }
-    }, 3000); // Check every 3 seconds
+    }, 3000);
     
-    // Return cleanup function
     return () => {
       clearInterval(intervalId);
     };
@@ -167,9 +155,7 @@ export const setupBalanceListeners = async (address, onBalanceUpdate) => {
   }
 };
 
-// GymCoin Contract Functions
 
-// Get token balance
 export const getGymCoinBalance = async (address) => {
   try {
     console.log("getGymCoinBalance called with address:", address);
@@ -210,23 +196,18 @@ export const getGymCoinBalance = async (address) => {
   }
 };
 
-// Get exchange rates
 export const getExchangeRates = async () => {
   try {
     if (!gymCoinContract) await initializeContracts();
     const sellRate = await gymCoinContract.sellRate();
     const buyRate = await gymCoinContract.buyRate();
-    // Now we can get rateDivisor directly from the contract
     const rateDivisor = await gymCoinContract.rateDivisor();
     
     console.log("Rates retrieved - Sell:", sellRate.toString(), "Buy:", buyRate.toString(), "Divisor:", rateDivisor.toString());
     
-    // Calculate the effective rates per token by considering the divisor
-    // For 1 full token (1e18 base units)
     const effectiveSellRate = (ethers.toBigInt(10**18) * sellRate) / rateDivisor;
     const effectiveBuyRate = (ethers.toBigInt(10**18) * buyRate) / rateDivisor;
     
-    // Calculate the price for 1000 tokens
     const costFor1000Tokens = (ethers.toBigInt(1000) * ethers.toBigInt(10**18) * sellRate) / rateDivisor;
     
     console.log("Effective sell rate (wei per token):", effectiveSellRate.toString());
@@ -238,10 +219,8 @@ export const getExchangeRates = async () => {
       sellRate: ethers.formatUnits(sellRate, 0),
       buyRate: ethers.formatUnits(buyRate, 0),
       rateDivisor: ethers.formatUnits(rateDivisor, 0),
-      // Return user-friendly rates per whole token
       effectiveSellRateEth: ethers.formatEther(effectiveSellRate),
       effectiveBuyRateEth: ethers.formatEther(effectiveBuyRate),
-      // Add the cost for 1000 tokens
       costFor1000TokensEth: ethers.formatEther(costFor1000Tokens),
       costFor1000TokensWei: costFor1000Tokens.toString()
     };
@@ -251,42 +230,34 @@ export const getExchangeRates = async () => {
   }
 };
 
-// Buy tokens
 export const buyGymCoins = async (amount = "1000") => {
   try {
     if (!gymCoinContract) await initializeContracts();
     
     console.log("GYM_COIN_ABI is array:", Array.isArray(GYM_COIN_ABI));
     
-    // Validate the amount is a reasonable number
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       throw new Error("Invalid amount. Please enter a positive number.");
     }
     
-    // Ensure the amount is a string for proper parsing
     const amountStr = parsedAmount.toString();
     
-    // Get the sell rate and rate divisor from the contract
     const sellRate = await gymCoinContract.sellRate();
     const rateDivisor = await gymCoinContract.rateDivisor();
     
     console.log("Buy operation - Token amount requested:", amountStr);
     console.log("Sell rate:", sellRate.toString(), "Rate divisor:", rateDivisor.toString());
     
-    // Make sure we're working with a string amount and parse it as a token amount with 18 decimals
-    // This converts a user-friendly value like "1000" into the proper base units
     console.log("Converting amount to buy:", amountStr);
     const tokenAmountInBaseUnits = ethers.parseUnits(amountStr, 18);
     
-    // Calculate the ETH amount needed using the contract's formula: (gcAmount * sellRate) / rateDivisor
     let ethAmount = (tokenAmountInBaseUnits * sellRate) / rateDivisor;
     
     console.log("Token amount to purchase (base units):", tokenAmountInBaseUnits.toString());
     console.log("ETH amount to send (wei):", ethAmount.toString());
     console.log("ETH amount to send (ETH):", ethers.formatEther(ethAmount));
     
-    // Check if the user has enough ETH
     const senderAddress = await signer.getAddress();
     const senderBalance = await provider.getBalance(senderAddress);
     console.log("Sender ETH balance (wei):", senderBalance.toString());
@@ -296,19 +267,16 @@ export const buyGymCoins = async (amount = "1000") => {
       throw new Error(`Insufficient funds. You need ${ethers.formatEther(ethAmount)} ETH but only have ${ethers.formatEther(senderBalance)} ETH.`);
     }
 
-    // Execute the transaction
     console.log("Executing buy transaction...");
     try {
-      // First estimate gas to check if transaction would succeed
       const gasEstimate = await gymCoinContract.buy.estimateGas(tokenAmountInBaseUnits, {
         value: ethAmount
       });
       console.log("Gas estimate for buy:", gasEstimate.toString());
       
-      // Execute the transaction with a gas limit
       const tx = await gymCoinContract.buy(tokenAmountInBaseUnits, {
         value: ethAmount,
-        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) // Add 20% buffer
+        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) 
       });
       
       console.log("Transaction submitted:", tx.hash);
@@ -320,7 +288,6 @@ export const buyGymCoins = async (amount = "1000") => {
     } catch (buyError) {
       console.error("Buy execution error:", buyError);
       
-      // Check for specific errors
       if (buyError.message.includes("insufficient funds")) {
         throw new Error("You don't have enough ETH for this purchase.");
       } else if (buyError.message.includes("gas required exceeds allowance")) {
@@ -337,43 +304,35 @@ export const buyGymCoins = async (amount = "1000") => {
   }
 };
 
-// Sell tokens
 export const sellGymCoins = async (amount) => {
   try {
     if (!gymCoinContract) await initializeContracts();
     
-    // Validate the amount is a reasonable number
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       throw new Error("Invalid amount. Please enter a positive number.");
     }
     
-    // Ensure the amount is a string for proper parsing
     const amountStr = parsedAmount.toString();
     
-    // Get the buy rate and rate divisor from the contract
     const buyRate = await gymCoinContract.buyRate();
     const rateDivisor = await gymCoinContract.rateDivisor();
     
     console.log("Sell operation - Token amount requested:", amountStr);
     console.log("Buy rate:", buyRate.toString(), "Rate divisor:", rateDivisor.toString());
     
-    // Get user's current balance to check if they have enough tokens
     const senderAddress = await signer.getAddress();
     const currentBalance = await gymCoinContract.balanceOf(senderAddress);
     const formattedBalance = ethers.formatUnits(currentBalance, 18);
     console.log("Current balance before sell:", formattedBalance);
     
-    // Convert user-friendly token amount to token base units with 18 decimals
     console.log("Converting amount to sell:", amountStr);
     const tokenAmountInBaseUnits = ethers.parseUnits(amountStr, 18);
     
-    // Check if user has enough tokens
     if (tokenAmountInBaseUnits > currentBalance) {
       throw new Error(`Insufficient token balance. You have ${formattedBalance} GC but are trying to sell ${amountStr} GC.`);
     }
     
-    // The contract will calculate ETH returned as: (gcAmount * buyRate) / rateDivisor
     const expectedEthReturn = (tokenAmountInBaseUnits * buyRate) / rateDivisor;
     console.log("Expected ETH return (wei):", expectedEthReturn.toString());
     console.log("Expected ETH return (ETH):", ethers.formatEther(expectedEthReturn));
@@ -381,13 +340,11 @@ export const sellGymCoins = async (amount) => {
     console.log("Executing sell transaction - Token amount to sell (base units):", tokenAmountInBaseUnits.toString());
     
     try {
-      // First estimate gas to check if transaction would succeed
       const gasEstimate = await gymCoinContract.sell.estimateGas(tokenAmountInBaseUnits);
       console.log("Gas estimate for sell:", gasEstimate.toString());
       
-      // Execute the transaction with a gas limit
       const tx = await gymCoinContract.sell(tokenAmountInBaseUnits, {
-        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) // Add 20% buffer
+        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) 
       });
       
       console.log("Transaction submitted:", tx.hash);
@@ -399,7 +356,6 @@ export const sellGymCoins = async (amount) => {
     } catch (sellError) {
       console.error("Sell execution error:", sellError);
       
-      // Check for specific errors
       if (sellError.message.includes("insufficient funds")) {
         throw new Error("You don't have enough tokens for this sale.");
       } else if (sellError.message.includes("gas required exceeds allowance")) {
@@ -420,26 +376,21 @@ export const transferGymCoins = async (toAddress, amount) => {
   try {
     if (!gymCoinContract) await initializeContracts();
     
-    // Validate the amount is a reasonable number
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       throw new Error("Invalid amount. Please enter a positive number.");
     }
     
-    // Ensure the amount is a string for proper parsing
     const amountStr = parsedAmount.toString();
     
-    // Get user's current balance to check if they have enough tokens
     const senderAddress = await signer.getAddress();
     const currentBalance = await gymCoinContract.balanceOf(senderAddress);
     const formattedBalance = ethers.formatUnits(currentBalance, 18);
     console.log("Current balance before transfer:", formattedBalance);
     
-    // Convert user-friendly token amount to token base units with 18 decimals
     console.log("Converting amount to transfer:", amountStr);
     const tokenAmountInBaseUnits = ethers.parseUnits(amountStr, 18);
     
-    // Check if user has enough tokens
     if (tokenAmountInBaseUnits > currentBalance) {
       throw new Error(`Insufficient token balance. You have ${formattedBalance} GC but are trying to transfer ${amountStr} GC.`);
     }
@@ -447,13 +398,11 @@ export const transferGymCoins = async (toAddress, amount) => {
     console.log("Executing transfer transaction - To:", toAddress, "Amount in Tokens (base units):", tokenAmountInBaseUnits.toString());
 
     try {
-      // First estimate gas to check if transaction would succeed
       const gasEstimate = await gymCoinContract.transfer.estimateGas(toAddress, tokenAmountInBaseUnits);
       console.log("Gas estimate for transfer:", gasEstimate.toString());
       
-      // Execute the transaction with a gas limit
       const tx = await gymCoinContract.transfer(toAddress, tokenAmountInBaseUnits, {
-        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) // Add 20% buffer
+        gasLimit: Math.ceil(Number(gasEstimate) * 1.2) 
       });
       
       console.log("Transaction submitted:", tx.hash);
@@ -465,7 +414,6 @@ export const transferGymCoins = async (toAddress, amount) => {
     } catch (transferError) {
       console.error("Transfer execution error:", transferError);
       
-      // Check for specific errors
       if (transferError.message.includes("insufficient funds")) {
         throw new Error("You don't have enough tokens for this transfer.");
       } else if (transferError.message.includes("gas required exceeds allowance")) {

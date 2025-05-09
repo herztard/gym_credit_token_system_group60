@@ -5,7 +5,6 @@ import {
   sellGymCoins, 
   transferGymCoins, 
   getExchangeRates,
-  getGymCoinBalance
 } from '../utils/contractServices';
 import { useBalance } from '../utils/BalanceContext';
 
@@ -85,10 +84,9 @@ function TokenOperations({ userData }) {
           throw new Error('Invalid operation');
       }
       
-      // Manually refresh the balance after transaction
       setTimeout(async () => {
         await refreshBalance();
-      }, 2000); // Add a small delay to ensure the blockchain has updated
+      }, 2000);
       
       setAmount('');
       setRecipient('');

@@ -23,7 +23,6 @@ function UserProfile({ userData }) {
           ? window.ethereum.selectedAddress 
           : userData.address;
 
-        // Update the address in the balance context
         updateUserAddress(actualAddress);
 
         const userProfile = await getUserProfile(actualAddress);

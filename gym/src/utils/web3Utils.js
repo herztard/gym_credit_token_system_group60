@@ -31,7 +31,6 @@ export const connectWallet = async () => {
     
     console.log("Connected to account:", accounts[0]);
     
-    // Check network
     try {
       const networkId = await web3.eth.net.getId();
       console.log("Current network ID:", networkId, "Expected:", CHAIN_ID);
@@ -81,10 +80,6 @@ export const disconnectWallet = async () => {
     const provider = await detectEthereumProvider();
     
     if (provider) {
-      // Although MetaMask doesn't have a true "disconnect" method in their public API,
-      // we can properly handle this by:
-      
-      // 1. For users on newer MetaMask versions that support wallet_revokePermissions:
       try {
         await provider.request({
           method: "wallet_revokePermissions",
@@ -96,7 +91,6 @@ export const disconnectWallet = async () => {
         console.log("Revoke permissions not supported, trying alternative", revokeError);
       }
       
-      // 2. Force a reload of the page on disconnect which is a common pattern
       window.location.reload();
     }
     
@@ -110,18 +104,14 @@ export const disconnectWallet = async () => {
 export const listenForAccountChanges = (callback) => {
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
-      // User disconnected their wallet
       callback({ connected: false, address: null });
     } else {
-      // User switched accounts
       callback({ connected: true, address: accounts[0] });
     }
   };
 
-  // Set up event listener
   window.ethereum && window.ethereum.on('accountsChanged', handleAccountsChanged);
   
-  // Return cleanup function
   return () => {
     window.ethereum && window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
   };

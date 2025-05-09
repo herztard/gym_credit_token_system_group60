@@ -1,4 +1,3 @@
-// Simple test script to check if the ABI is correctly formatted
 import GymCoinArtifact from './GymCoin.json';
 import UserProfileArtifact from './UserProfile.json';
 
@@ -22,6 +21,5 @@ if (Array.isArray(UserProfileArtifact.abi)) {
   console.log("First item:", UserProfileArtifact.abi[0]);
 }
 
-// Export for use in browser console
 export const gymCoinAbi = GymCoinArtifact.abi;
 export const userProfileAbi = UserProfileArtifact.abi;

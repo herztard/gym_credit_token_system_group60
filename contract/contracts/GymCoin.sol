@@ -20,7 +20,6 @@ contract GymCoin is ERC20, Ownable {
     }
 
     function buy(uint256 gcAmount) external payable {
-        // Calculate ETH required: (gcAmount * sellRate) / rateDivisor
         uint256 ethRequired = (gcAmount * sellRate) / rateDivisor;
         require(msg.value == ethRequired, "Incorrect ETH amount sent");
         require(balanceOf(owner()) >= gcAmount, "Owner does not have enough GC");
@@ -29,7 +28,6 @@ contract GymCoin is ERC20, Ownable {
 
     function sell(uint256 gcAmount) external {
         require(balanceOf(msg.sender) >= gcAmount, "Insufficient GC balance");
-        // Calculate ETH to return: (gcAmount * buyRate) / rateDivisor
         uint256 ethAmount = (gcAmount * buyRate) / rateDivisor;
         require(address(this).balance >= ethAmount, "Contract has insufficient ETH");
         _transfer(msg.sender, owner(), gcAmount);
