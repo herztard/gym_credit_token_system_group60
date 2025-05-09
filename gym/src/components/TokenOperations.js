@@ -9,7 +9,7 @@ import {
 } from '../utils/contractServices';
 import { useBalance } from '../utils/BalanceContext';
 
-function TokenOperations({ userData }) {
+function TokenOperations({ userData, refreshEthBalance }) {
   const [activeTab, setActiveTab] = useState('buy');
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
@@ -52,6 +52,11 @@ function TokenOperations({ userData }) {
           const tx = await buyGymCoins(amount);
           await tx.wait();
           setSuccess(`Successfully bought ${amount} GC. Transaction hash: ${tx.hash}`);
+          // Update balances immediately after successful transaction
+          await Promise.all([
+            refreshBalance(),
+            refreshEthBalance()
+          ]);
           break;
         }
         
@@ -63,6 +68,11 @@ function TokenOperations({ userData }) {
           const tx = await sellGymCoins(amount);
           await tx.wait();
           setSuccess(`Successfully sold ${amount} GC. Transaction hash: ${tx.hash}`);
+          // Update balances immediately after successful transaction
+          await Promise.all([
+            refreshBalance(),
+            refreshEthBalance()
+          ]);
           break;
         }
         
@@ -78,16 +88,17 @@ function TokenOperations({ userData }) {
           const tx = await transferGymCoins(recipient, amount);
           await tx.wait();
           setSuccess(`Successfully transferred ${amount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
+          // Update balances immediately after successful transaction
+          await Promise.all([
+            refreshBalance(),
+            refreshEthBalance()
+          ]);
           break;
         }
         
         default:
           throw new Error('Invalid operation');
       }
-      
-      setTimeout(async () => {
-        await refreshBalance();
-      }, 2000);
       
       setAmount('');
       setRecipient('');

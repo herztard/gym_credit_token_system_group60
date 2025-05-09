@@ -16,6 +16,20 @@ function App() {
   const [isUserRegistered, setIsUserRegistered] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Function to refresh ETH balance
+  const refreshEthBalance = async () => {
+    if (!web3 || !userData.fullAddress) return;
+    try {
+      const ethBalance = await getBalance(web3, userData.fullAddress);
+      setUserData(prev => ({
+        ...prev,
+        ethBalance
+      }));
+    } catch (error) {
+      console.error('Error refreshing ETH balance:', error);
+    }
+  };
+
   // Check if wallet is already connected on page load
   useEffect(() => {
     const checkConnection = async () => {
@@ -219,7 +233,7 @@ function App() {
               <div className="col-lg-6">
                 <div className="d-flex flex-column gap-4">
                   <UserProfile userData={userData} />
-                  <TokenOperations userData={userData} />
+                  <TokenOperations userData={userData} refreshEthBalance={refreshEthBalance} />
                 </div>
               </div>
               
