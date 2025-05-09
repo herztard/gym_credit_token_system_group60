@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile, getGymCoinBalance } from '../utils/contractServices';
+import { useBalance } from '../utils/BalanceContext';
 
 function UserProfile({ userData }) {
   const [profile, setProfile] = useState(null);
-  const [gcBalance, setGcBalance] = useState('0');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { gcBalance, updateUserAddress } = useBalance();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -22,12 +23,11 @@ function UserProfile({ userData }) {
           ? window.ethereum.selectedAddress 
           : userData.address;
 
+        // Update the address in the balance context
+        updateUserAddress(actualAddress);
+
         const userProfile = await getUserProfile(actualAddress);
-        
-        const balance = await getGymCoinBalance(actualAddress);
-        
         setProfile(userProfile);
-        setGcBalance(balance);
       } catch (error) {
         console.error('Error fetching user data:', error);
         setError('Failed to fetch user data. Please try again.');
@@ -37,7 +37,7 @@ function UserProfile({ userData }) {
     };
 
     fetchUserData();
-  }, [userData.address]);
+  }, [userData.address, updateUserAddress]);
 
   return (
     <div className="card shadow-sm">
@@ -78,7 +78,7 @@ function UserProfile({ userData }) {
             
             <div className="d-flex justify-content-between">
               <span className="text-muted">GC Balance:</span>
-              <span>{parseFloat(gcBalance)} GC</span>
+              <span id="gc-balance-display" className="balance-value">{parseFloat(gcBalance)} GC</span>
             </div>
           </div>
         )}

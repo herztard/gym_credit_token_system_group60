@@ -7,6 +7,7 @@ import {
   getExchangeRates,
   getGymCoinBalance
 } from '../utils/contractServices';
+import { useBalance } from '../utils/BalanceContext';
 
 function TokenOperations({ userData }) {
   const [activeTab, setActiveTab] = useState('buy');
@@ -16,28 +17,21 @@ function TokenOperations({ userData }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [rates, setRates] = useState({ buyRate: '50', sellRate: '50' });
-  const [gcBalance, setGcBalance] = useState('0');
+  const { gcBalance, refreshBalance } = useBalance();
 
   useEffect(() => {
-    const fetchRatesAndBalance = async () => {
+    const fetchRates = async () => {
       try {
         if (!userData.address || userData.address === '0x...') return;
         
-        const actualAddress = userData.address.includes('...') 
-          ? window.ethereum.selectedAddress 
-          : userData.address;
-          
         const currentRates = await getExchangeRates();
         setRates(currentRates);
-        
-        const balance = await getGymCoinBalance(actualAddress);
-        setGcBalance(balance);
       } catch (error) {
-        console.error('Error fetching rates or balance:', error);
+        console.error('Error fetching rates:', error);
       }
     };
     
-    fetchRatesAndBalance();
+    fetchRates();
   }, [userData.address]);
 
   const handleSubmit = async (e) => {
@@ -56,6 +50,7 @@ function TokenOperations({ userData }) {
       switch (activeTab) {
         case 'buy': {
           const tx = await buyGymCoins(amount);
+          await tx.wait();
           setSuccess(`Successfully bought ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -66,6 +61,7 @@ function TokenOperations({ userData }) {
           }
           
           const tx = await sellGymCoins(amount);
+          await tx.wait();
           setSuccess(`Successfully sold ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -80,6 +76,7 @@ function TokenOperations({ userData }) {
           }
           
           const tx = await transferGymCoins(recipient, amount);
+          await tx.wait();
           setSuccess(`Successfully transferred ${amount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
           break;
         }
@@ -88,11 +85,10 @@ function TokenOperations({ userData }) {
           throw new Error('Invalid operation');
       }
       
-      const actualAddress = userData.address.includes('...') 
-        ? window.ethereum.selectedAddress 
-        : userData.address;
-      const updatedBalance = await getGymCoinBalance(actualAddress);
-      setGcBalance(updatedBalance);
+      // Manually refresh the balance after transaction
+      setTimeout(async () => {
+        await refreshBalance();
+      }, 2000); // Add a small delay to ensure the blockchain has updated
       
       setAmount('');
       setRecipient('');

@@ -13,3 +13,26 @@ input {
     padding: 5px;
     font-size: 16px;
 }
+
+@keyframes balanceUpdate {
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: rgba(25, 135, 84, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.balance-value {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.balance-value.updated {
+  animation: balanceUpdate 2s ease;
+}

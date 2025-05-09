@@ -6,6 +6,7 @@ import TransactionHistory from './components/TransactionHistory';
 import { connectWallet, disconnectWallet, getBalance, formatAddress, listenForAccountChanges } from './utils/web3Utils';
 import { getUserProfile } from './utils/contractServices';
 import { NETWORK_NAME, GYM_COIN_ADDRESS } from './contracts';
+import { BalanceProvider } from './utils/BalanceContext';
 
 function App() {
   const [isConnected, setIsConnected] = useState(false);
@@ -163,101 +164,103 @@ function App() {
   };
 
   return (
-    <div className="min-vh-100 bg-light">
-      <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div className="container">
-          <div className="d-flex justify-content-between w-100 align-items-center">
-            <h1 className="navbar-brand mb-0 h1">Gym Coin (GC)</h1>
-            <div className="d-flex align-items-center gap-3">
-              {isConnected && (
-                <span className="badge bg-primary">
-                  {NETWORK_NAME}
-                </span>
-              )}
-              {!isConnected ? (
-                <button
-                  onClick={handleConnectWallet}
-                  className="btn btn-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Connecting...
-                    </>
-                  ) : (
-                    'Connect Wallet'
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={handleDisconnectWallet}
-                  className="btn btn-danger"
-                >
-                  Disconnect
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {error && (
-        <div className="container mt-3">
-          <div className={`alert ${error.includes('disconnected') ? 'alert-info' : 'alert-danger'}`} role="alert">
-            {error}
-          </div>
-        </div>
-      )}
-
-      <main className="container py-4">
-        {isConnected ? (
-          <div className="row g-4">
-            {/* User Profile and Token Operations */}
-            <div className="col-lg-6">
-              <div className="d-flex flex-column gap-4">
-                <UserProfile userData={userData} />
-                <TokenOperations userData={userData} />
+    <BalanceProvider>
+      <div className="min-vh-100 bg-light">
+        <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+          <div className="container">
+            <div className="d-flex justify-content-between w-100 align-items-center">
+              <h1 className="navbar-brand mb-0 h1">Gym Coin (GC)</h1>
+              <div className="d-flex align-items-center gap-3">
+                {isConnected && (
+                  <span className="badge bg-primary">
+                    {NETWORK_NAME}
+                  </span>
+                )}
+                {!isConnected ? (
+                  <button
+                    onClick={handleConnectWallet}
+                    className="btn btn-primary"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Connecting...
+                      </>
+                    ) : (
+                      'Connect Wallet'
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleDisconnectWallet}
+                    className="btn btn-danger"
+                  >
+                    Disconnect
+                  </button>
+                )}
               </div>
             </div>
-            
-            {/* Registration Form or Transaction History */}
-            <div className="col-lg-6">
-              {!isUserRegistered ? (
-                <UserRegistration 
-                  userAddress={userData.fullAddress} 
-                  onSuccess={handleRegistrationSuccess} 
-                />
-              ) : (
-                <TransactionHistory />
-              )}
+          </div>
+        </nav>
+
+        {error && (
+          <div className="container mt-3">
+            <div className={`alert ${error.includes('disconnected') ? 'alert-info' : 'alert-danger'}`} role="alert">
+              {error}
             </div>
           </div>
-        ) : (
-          <div className="text-center py-5">
-            <h2 className="h3 text-muted">
-              Please connect your wallet to continue
-            </h2>
-            <p className="text-muted mt-3">
-              Make sure you have MetaMask installed and are connected to {NETWORK_NAME}
-            </p>
-          </div>
         )}
-      </main>
-      
-      <footer className="bg-white py-4 mt-auto">
-        <div className="container">
-          <div className="text-center text-muted">
-            <p className="mb-0">
-              Gym Coin - ERC-20 Token for Gym Credit System
-            </p>
-            <small>
-              Contract Address: {GYM_COIN_ADDRESS}
-            </small>
+
+        <main className="container py-4">
+          {isConnected ? (
+            <div className="row g-4">
+              {/* User Profile and Token Operations */}
+              <div className="col-lg-6">
+                <div className="d-flex flex-column gap-4">
+                  <UserProfile userData={userData} />
+                  <TokenOperations userData={userData} />
+                </div>
+              </div>
+              
+              {/* Registration Form or Transaction History */}
+              <div className="col-lg-6">
+                {!isUserRegistered ? (
+                  <UserRegistration 
+                    userAddress={userData.fullAddress} 
+                    onSuccess={handleRegistrationSuccess} 
+                  />
+                ) : (
+                  <TransactionHistory />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <h2 className="h3 text-muted">
+                Please connect your wallet to continue
+              </h2>
+              <p className="text-muted mt-3">
+                Make sure you have MetaMask installed and are connected to {NETWORK_NAME}
+              </p>
+            </div>
+          )}
+        </main>
+        
+        <footer className="bg-white py-4 mt-auto">
+          <div className="container">
+            <div className="text-center text-muted">
+              <p className="mb-0">
+                Gym Coin - ERC-20 Token for Gym Credit System
+              </p>
+              <small>
+                Contract Address: {GYM_COIN_ADDRESS}
+              </small>
+            </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </BalanceProvider>
   );
 }
 
