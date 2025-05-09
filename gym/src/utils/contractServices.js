@@ -6,6 +6,7 @@ import {
   USER_PROFILE_ABI 
 } from '../contracts';
 
+
 let provider;
 let signer;
 let gymCoinContract;
@@ -127,6 +128,41 @@ export const initializeContracts = async () => {
     return { provider, signer, gymCoinContract, userProfileContract };
   } catch (error) {
     console.error("Contract initialization error:", error);
+    throw error;
+  }
+};
+
+// Set up balance update listeners
+export const setupBalanceListeners = async (address, onBalanceUpdate) => {
+  try {
+    if (!gymCoinContract) await initializeContracts();
+
+    // Instead of using contract events which aren't properly defined in the ABI,
+    // set up a polling mechanism to check balance periodically
+    let lastBalance = await getGymCoinBalance(address);
+    
+    // Start polling for balance changes
+    const intervalId = setInterval(async () => {
+      try {
+        const currentBalance = await getGymCoinBalance(address);
+        
+        // If balance changed, trigger the callback
+        if (currentBalance !== lastBalance) {
+          console.log("Balance changed:", lastBalance, "->", currentBalance);
+          lastBalance = currentBalance;
+          onBalanceUpdate(currentBalance);
+        }
+      } catch (error) {
+        console.error("Error polling balance:", error);
+      }
+    }, 3000); // Check every 3 seconds
+    
+    // Return cleanup function
+    return () => {
+      clearInterval(intervalId);
+    };
+  } catch (error) {
+    console.error("Error setting up balance listeners:", error);
     throw error;
   }
 };

@@ -7,6 +7,7 @@ import {
   getExchangeRates,
   getGymCoinBalance
 } from '../utils/contractServices';
+import { useBalance } from '../utils/BalanceContext';
 
 function TokenOperations({ userData }) {
   const [activeTab, setActiveTab] = useState('buy');
@@ -16,58 +17,22 @@ function TokenOperations({ userData }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [rates, setRates] = useState({ buyRate: '50', sellRate: '50' });
-  const [gcBalance, setGcBalance] = useState('0');
+  const { gcBalance, refreshBalance } = useBalance();
 
   useEffect(() => {
-    const fetchRatesAndBalance = async () => {
+    const fetchRates = async () => {
       try {
-        if (!userData.address || userData.address === '0x...') {
-          console.log("No valid user address, skipping balance fetch");
-          return;
-        }
+        if (!userData.address || userData.address === '0x...') return;
         
-        const actualAddress = userData.address.includes('...') 
-          ? window.ethereum.selectedAddress 
-          : userData.address;
-          
-        console.log("Fetching balance for:", actualAddress);
-          
         const currentRates = await getExchangeRates();
         setRates(currentRates);
-        
-        const balance = await getGymCoinBalance(actualAddress);
-        console.log("Balance fetched:", balance);
-        setGcBalance(balance);
       } catch (error) {
-        console.error('Error fetching rates or balance:', error);
+        console.error('Error fetching rates:', error);
       }
     };
     
-    fetchRatesAndBalance();
-    
-    // Set up a 15-second interval to refresh balance
-    const intervalId = setInterval(fetchRatesAndBalance, 15000);
-    
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
+    fetchRates();
   }, [userData.address]);
-  
-  const refreshBalance = async () => {
-    try {
-      if (!userData.address || userData.address === '0x...') return;
-      
-      const actualAddress = userData.address.includes('...') 
-        ? window.ethereum.selectedAddress 
-        : userData.address;
-        
-      console.log("Manually refreshing balance for:", actualAddress);
-      const balance = await getGymCoinBalance(actualAddress);
-      console.log("Updated balance:", balance);
-      setGcBalance(balance);
-    } catch (error) {
-      console.error('Error refreshing balance:', error);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,32 +41,28 @@ function TokenOperations({ userData }) {
     setSuccess('');
     
     try {
-      if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+      if (!amount || isNaN(amount)) {
         throw new Error('Please enter a valid amount');
       }
       
-      if (parseFloat(amount) > 1000000) {
-        throw new Error('Amount is too large. Please enter a smaller amount.');
-      }
-      
-      // Make sure amount is a reasonable value
-      const parsedAmount = parseFloat(amount).toString();
-      console.log(`Processing ${parsedAmount} GC tokens`);
+      console.log(`Processing ${amount} GC tokens`);
       
       switch (activeTab) {
         case 'buy': {
-          const tx = await buyGymCoins(parsedAmount);
-          setSuccess(`Successfully bought ${parsedAmount} GC. Transaction hash: ${tx.hash}`);
+          const tx = await buyGymCoins(amount);
+          await tx.wait();
+          setSuccess(`Successfully bought ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
         
         case 'sell': {
-          if (parseFloat(gcBalance) < parseFloat(parsedAmount)) {
+          if (parseFloat(gcBalance) < parseFloat(amount)) {
             throw new Error('Insufficient GC balance');
           }
           
-          const tx = await sellGymCoins(parsedAmount);
-          setSuccess(`Successfully sold ${parsedAmount} GC. Transaction hash: ${tx.hash}`);
+          const tx = await sellGymCoins(amount);
+          await tx.wait();
+          setSuccess(`Successfully sold ${amount} GC. Transaction hash: ${tx.hash}`);
           break;
         }
         
@@ -110,12 +71,13 @@ function TokenOperations({ userData }) {
             throw new Error('Invalid recipient address');
           }
           
-          if (parseFloat(gcBalance) < parseFloat(parsedAmount)) {
+          if (parseFloat(gcBalance) < parseFloat(amount)) {
             throw new Error('Insufficient GC balance');
           }
           
-          const tx = await transferGymCoins(recipient, parsedAmount);
-          setSuccess(`Successfully transferred ${parsedAmount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
+          const tx = await transferGymCoins(recipient, amount);
+          await tx.wait();
+          setSuccess(`Successfully transferred ${amount} GC to ${recipient}. Transaction hash: ${tx.hash}`);
           break;
         }
         
@@ -123,13 +85,10 @@ function TokenOperations({ userData }) {
           throw new Error('Invalid operation');
       }
       
-      // Refresh the balance after operation
-      const actualAddress = userData.address.includes('...') 
-        ? window.ethereum.selectedAddress 
-        : userData.address;
-      const updatedBalance = await getGymCoinBalance(actualAddress);
-      console.log("Balance after operation:", updatedBalance);
-      setGcBalance(updatedBalance);
+      // Manually refresh the balance after transaction
+      setTimeout(async () => {
+        await refreshBalance();
+      }, 2000); // Add a small delay to ensure the blockchain has updated
       
       setAmount('');
       setRecipient('');
@@ -211,8 +170,6 @@ function TokenOperations({ userData }) {
               placeholder="Enter amount"
               required
               disabled={isLoading}
-              min="0"
-              step="0.01"
             />
           </div>
 
@@ -220,21 +177,8 @@ function TokenOperations({ userData }) {
             <div className="text-muted small">
               <div>Cost: {amount ? (parseFloat(amount) * parseFloat(rates.buyRate) / 1e18).toFixed(8) : '0'} ETH</div>
               <div className="mt-1">Current Buy Rate: 1 GC = {parseFloat(rates.buyRate) / 1e18} ETH</div>
-              <div className="mt-1 d-flex align-items-center justify-content-between">
-                <span>Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</span>
-                <button 
-                  type="button" 
-                  className="btn btn-sm btn-outline-secondary" 
-                  onClick={refreshBalance}
-                >
-                  🔄 Refresh
-                </button>
-              </div>
               <div className="mt-1">
                 <small>You will receive exactly {amount || '0'} GC tokens.</small>
-              </div>
-              <div className="mt-2 p-1 bg-light text-muted" style={{fontSize: '10px'}}>
-                Raw balance value: "{gcBalance}"
               </div>
             </div>
           )}
@@ -243,42 +187,18 @@ function TokenOperations({ userData }) {
             <div className="text-muted small">
               <div>You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / 1e18).toFixed(8) : '0'} ETH</div>
               <div className="mt-1">Current Sell Rate: 1 GC = {parseFloat(rates.sellRate) / 1e18} ETH</div>
-              <div className="mt-1 d-flex align-items-center justify-content-between">
-                <span>Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</span>
-                <button 
-                  type="button" 
-                  className="btn btn-sm btn-outline-secondary" 
-                  onClick={refreshBalance}
-                >
-                  🔄 Refresh
-                </button>
-              </div>
+              <div className="mt-1">Your GC Balance: {parseFloat(gcBalance)} GC</div>
               <div className="mt-1">
                 <small>You will sell exactly {amount || '0'} GC tokens.</small>
-              </div>
-              <div className="mt-2 p-1 bg-light text-muted" style={{fontSize: '10px'}}>
-                Raw balance value: "{gcBalance}"
               </div>
             </div>
           )}
           
           {activeTab === 'transfer' && (
             <div className="text-muted small">
-              <div className="d-flex align-items-center justify-content-between">
-                <span>Your GC Balance: {parseFloat(gcBalance).toFixed(4)} GC</span>
-                <button 
-                  type="button" 
-                  className="btn btn-sm btn-outline-secondary" 
-                  onClick={refreshBalance}
-                >
-                  🔄 Refresh
-                </button>
-              </div>
+              <div>Your GC Balance: {parseFloat(gcBalance)} GC</div>
               <div className="mt-1">
                 <small>You will transfer exactly {amount || '0'} GC tokens to {recipient || 'recipient'}.</small>
-              </div>
-              <div className="mt-2 p-1 bg-light text-muted" style={{fontSize: '10px'}}>
-                Raw balance value: "{gcBalance}"
               </div>
             </div>
           )}
