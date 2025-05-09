@@ -5,6 +5,7 @@ import {
   sellGymCoins, 
   transferGymCoins, 
   getExchangeRates,
+  getGymCoinBalance,
 } from '../utils/contractServices';
 import { useBalance } from '../utils/BalanceContext';
 
