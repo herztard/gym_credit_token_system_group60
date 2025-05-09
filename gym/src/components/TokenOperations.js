@@ -16,7 +16,7 @@ function TokenOperations({ userData }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [rates, setRates] = useState({ buyRate: '50', sellRate: '50' });
+  const [rates, setRates] = useState({ buyRate: '1', sellRate: '1', rateDivisor:'10000000' });
   const { gcBalance, refreshBalance } = useBalance();
 
   useEffect(() => {
@@ -174,8 +174,8 @@ function TokenOperations({ userData }) {
 
           {activeTab === 'buy' && (
             <div className="text-muted small">
-              <div>Cost: {amount ? (parseFloat(amount) * parseFloat(rates.buyRate) / 1e18).toFixed(8) : '0'} ETH</div>
-              <div className="mt-1">Current Buy Rate: 1 GC = {parseFloat(rates.buyRate) / 1e18} ETH</div>
+              <div>Cost: {amount ? (parseFloat(amount) * parseFloat(rates.buyRate) / rates.rateDivisor) : '0'} ETH</div>
+              <div className="mt-1">Current Buy Rate: 1 GC = {parseFloat(rates.buyRate) / rates.rateDivisor} ETH</div>
               <div className="mt-1">
                 <small>You will receive exactly {amount || '0'} GC tokens.</small>
               </div>
@@ -184,8 +184,8 @@ function TokenOperations({ userData }) {
           
           {activeTab === 'sell' && (
             <div className="text-muted small">
-              <div>You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / 1e18).toFixed(8) : '0'} ETH</div>
-              <div className="mt-1">Current Sell Rate: 1 GC = {parseFloat(rates.sellRate) / 1e18} ETH</div>
+              <div>You'll receive: {amount ? (parseFloat(amount) * parseFloat(rates.sellRate) / rates.rateDivisor) : '0'} ETH</div>
+              <div className="mt-1">Current Sell Rate: 1 GC = {parseFloat(rates.sellRate) / rates.rateDivisor} ETH</div>
               <div className="mt-1">Your GC Balance: {parseFloat(gcBalance)} GC</div>
               <div className="mt-1">
                 <small>You will sell exactly {amount || '0'} GC tokens.</small>
