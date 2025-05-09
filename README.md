@@ -25,4 +25,55 @@ a simple frontend interface for users.
 | Almat Zhuban          | 220103067   | 01-N          | 05-P           |
 | Ibrahim Serkebay      | 220103069   | 01-N          | 03-P           |
 
+## Instructions
+
+`/contract` - blockchain part (contract code, deployment code, other configurations) 
+<br>
+`/gym` - frontend part
+
+
+### Blockchain Part
+Contracts have been already deployed, but if you want to deploy it by yourself, follow next instructions
+
+1. Enter the contract directory
+    ```bash
+    cd contract 
+    ```
+2. Install npm dependencies
+    ```bash
+    npm install
+    ```
+3. Create and set up .env file. <br>
+INFURA_SEPOLIA_ENDPOINT may be taken from here https://developer.metamask.io/key/active-endpoints <br>
+PRIVATE_key may be taken from Metamask: open extension ---> tap on triple dots ---> Account Details ---> Show Private Key ---> Enter your password ---> Hold to reveal private key ---> copy your private key
+    ```bash
+    echo "INFURA_SEPOLIA_ENDPOINT=<your-infura-sepolia-endpoint>" > .env
+    echo "PRIVATE_KEY=<your-private-key>"  >> .env
+    ```
+
+4. Deploy contracts. 
+   ```bash
+   npx hardhat --network sepolia run scripts/deploy.js   
+   ```
+
+5. In output of previous step will be displayed addresses of GymCoin and UserProfile contracts, save them and put them into next file `gym/src/contracts/index.js` by replacing existing ones.
+```javascript
+export const GYM_COIN_ADDRESS = '<your-gym-coin-address>';
+export const USER_PROFILE_ADDRESS = '<your-user-profile-address>';
+```
+
+### Frontend Part
+Run client to interact with contracts
+1. Enter the gym directory
+    ```bash
+    cd gym 
+    ```
+2. Install npm dependencies
+    ```bash
+    npm install
+    ```
+3. Run client
+   ```bash
+   npm start 
+   ```
 
