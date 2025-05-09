@@ -294,7 +294,10 @@ export const buyGymCoins = async (amount = "1000") => {
         throw new Error("Transaction would fail. You may not have enough ETH for gas or the contract rejected the purchase.");
       } else if (buyError.message.includes("Owner does not have enough GC")) {
         throw new Error("The contract owner doesn't have enough tokens to sell to you.");
-      } else {
+      } else if (buyError.message.includes("user rejected action")) {
+        throw new Error("Action failed: user rejected action.");
+      }
+      else {
         throw new Error(`Purchase failed: ${buyError.message}`);
       }
     }
@@ -362,6 +365,8 @@ export const sellGymCoins = async (amount) => {
         throw new Error("Transaction would fail. You may not have enough ETH for gas or the contract rejected the sale.");
       } else if (sellError.message.includes("Contract has insufficient ETH")) {
         throw new Error("The contract doesn't have enough ETH to pay you. Try selling a smaller amount.");
+      } else if (sellError.message.includes("user rejected action")) {
+        throw new Error("Action failed: user rejected action.");
       } else {
         throw new Error(`Sale failed: ${sellError.message}`);
       }
@@ -418,6 +423,8 @@ export const transferGymCoins = async (toAddress, amount) => {
         throw new Error("You don't have enough tokens for this transfer.");
       } else if (transferError.message.includes("gas required exceeds allowance")) {
         throw new Error("Transaction would fail. You may not have enough ETH for gas or the contract rejected the transfer.");
+      } else if (transferError.message.includes("user rejected action")) {
+        throw new Error("Action failed: user rejected action.");
       } else {
         throw new Error(`Transfer failed: ${transferError.message}`);
       }
